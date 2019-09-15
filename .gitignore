@@ -1,2 +1,4 @@
-.versions
-.need_back_to
+.Makefile
+*.exe
+.bin
+.bin/*
