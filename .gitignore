@@ -2,3 +2,4 @@
 *.exe
 .bin
 .bin/*
+*.o

@@ -332,32 +332,6 @@ Matrix<DataType>::operator Matrix<ElemType>()const
 }
 
 template<class DataType>
-typename Matrix<DataType>::Shadow Matrix<DataType>::operator [](int i)
-{
-	if(i < 0 || i >= n_rows)
-	{
-		cout << "Error using Matrix<DataType>[i][j]:" << endl
-			 << "i is out of bande [0, rows-1]!" << endl;
-		exit(-1);
-	}
-	
-	return Shadow(n_rows, n_cols, _data, i);
-}
-
-template<class DataType>
-typename Matrix<DataType>::Shadow Matrix<DataType>::operator [](int i)const
-{
-	if(i < 0 || i >= n_rows)
-	{
-		cout << "Error using Matrix<DataType>[i][j]:" << endl
-			 << "i is out of bande [0, rows-1]!" << endl;
-		exit(-1);
-	}
-
-	return Shadow(n_rows, n_cols, _data, i);
-}
-
-template<class DataType>
 DataType& Matrix<DataType>::operator ()(int i)
 {
     if(i < 0 || i >= _size)
@@ -372,6 +346,32 @@ DataType& Matrix<DataType>::operator ()(int i)
 
 template<class DataType>
 DataType Matrix<DataType>::operator ()(int i)const
+{
+    if(i < 0 || i >= _size)
+    {
+        cout << "Error using Matrix<DataType>(i):" << endl
+             << "index is out of bande!" << endl;
+        exit(-1);
+    }
+
+    return _data[i];
+}
+
+template<class DataType>
+DataType& Matrix<DataType>::operator [](int i)
+{
+    if(i < 0 || i >= _size)
+    {
+        cout << "Error using Matrix<DataType>(i):" << endl
+             << "index is out of bande!" << endl;
+        exit(-1);
+    }
+
+    return _data[i];
+}
+
+template<class DataType>
+DataType Matrix<DataType>::operator [](int i)const
 {
     if(i < 0 || i >= _size)
     {
@@ -1259,7 +1259,10 @@ ostream & operator <<(ostream& o, Matrix<DataType> A)
 				o << A(i, j) << Matrix<DataType>::multi_space(space_length+1);
 			}
 		}
-		o << endl;
+		if(i != A.n_rows-1)
+		{
+			o << endl;
+		}
 	}
 	delete longest_size;
 
@@ -1278,21 +1281,27 @@ void meshgrid(Matrix<DataType>& x, Matrix<DataType>& y)
 }
 
 template<class DataType>
+Matrix<float> zeros(const Matrix<DataType>& A)
+{
+	return Matrix<float>(A.rows(), A.cols(), 0.0f);
+}
+
+template<class DataType>
 Matrix<float> ones(const Matrix<DataType>& A)
 {
-	return Matrix<float>(A.n_rows, A.n_cols, 1.0f);
+	return Matrix<float>(A.rows(), A.cols(), 1.0f);
 }
 
 template<class DataType>
 Matrix<float> eye(const Matrix<DataType>& A)
 {
-	return eye(A.n_rows, A.n_cols);
+	return eye(A.rows(), A.cols());
 }
 
 template<class DataType>
 Matrix<float> rand(const Matrix<DataType>& A)
 {
-	return rand(A.n_rows, A.n_cols);
+	return rand(A.rows(), A.cols());
 }
 
 template<class DataType>

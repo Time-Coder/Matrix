@@ -1,13 +1,13 @@
 all: main.exe
 
 main.exe: main.o matrixf.o
-	g++ -std=c++11 *.o -o main.exe
+	g++ -std=c++11 main.o matrixf.o -o main.exe
 
 main.o: main.cpp matrix.h matrix.cpp
-	g++ -std=c++11 -c main.cpp
+	g++ -std=c++11 -I. -c main.cpp
 
 matrixf.o: matrixf.cpp matrix.h
-	g++ -std=c++11 -c matrixf.cpp
+	g++ -std=c++11 -I. -c matrixf.cpp
 
 run: main.exe
 	./main.exe

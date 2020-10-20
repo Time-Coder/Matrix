@@ -15,41 +15,6 @@ using namespace std;
 template<class DataType = float>
 class Matrix
 {
-public:
-	class Shadow
-	{
-    private:
-		int n_rows;
-		int n_cols;
-		DataType* _data;
-		int i;
-
-	public:
-		Shadow(int rows, int cols, DataType* init_data, int _i) :
-        n_rows(rows), n_cols(cols), _data(init_data), i(_i) {}
-
-		DataType& operator [](int j)
-		{
-			if(j < 0 || j >= n_cols)
-			{
-				cout << "Error using Matrix<DataType>[i][j]:" << endl
-					 << "j is out of bande [0, cols-1]!" << endl;
-				exit(-1);
-			}
-			return _data[i + j * n_rows];
-		}
-		DataType operator [](int j)const
-		{
-			if(j < 0 || j >= n_cols)
-			{
-				cout << "Error using Matrix<DataType>[i][j]:" << endl
-					 << "j is out of bande [0, cols-1]!" << endl;
-				exit(-1);
-			}
-			return _data[i + j * n_rows];
-		}
-	};
-
 private:
 	static string cout2string(const DataType& element);
 	static string multi_space(int n);
@@ -115,10 +80,10 @@ public:
 	template<class ElemType>
 	operator Matrix<ElemType>()const;
 
-	Shadow operator [](int i);
-	Shadow operator [](int i)const;
     DataType& operator ()(int i);
+    DataType& operator [](int i);
     DataType operator ()(int i)const;
+    DataType operator [](int i)const;
     DataType& operator ()(int i, int j);
     DataType operator ()(int i, int j)const;
 
@@ -249,20 +214,6 @@ public:
 	template<class ElemType>
 	Matrix<bool> friend operator !=(const ElemType& b, const Matrix<ElemType>& A);
 
-	friend Matrix<float> to(float start, float step, float end);
-
-    template<class ElemType>
-    friend Matrix<float> ones(const Matrix<ElemType>& A);
-
-    template<class ElemType>
-    friend Matrix<float> eye(const Matrix<ElemType>& A);
-
-	friend Matrix<float> eye(int rows, int cols);
-	friend Matrix<float> rand(int rows, int cols);
-
-    template<class ElemType>
-    friend Matrix<float> rand(const Matrix<ElemType>& A);
-
 	friend float norm(const Matrix<float>& v);
 	friend float dot(const Matrix<float>& v1, const Matrix<float>& v2);
 	friend Matrix<float> cross(const Matrix<float>& v1, const Matrix<float>& v2);
@@ -297,36 +248,25 @@ public:
     friend void meshgrid(Matrix<ElemData>& x, Matrix<ElemData>& y);
 };
 
-
-Matrix<float> to(float start, float end);
+template<class ElemType>
+Matrix<float> zeros(const Matrix<ElemType>& A);
 Matrix<float> zeros(int rows, int cols);
 Matrix<float> zeros(int n);
 
-template<class DataType>
-Matrix<float> zeros_like(const Matrix<DataType>& A)
-{
-    return Matrix<float>(A.rows(), A.cols(), 0.0f);
-}
-
+template<class ElemType>
+Matrix<float> ones(const Matrix<ElemType>& A);
 Matrix<float> ones(int rows, int cols);
 Matrix<float> ones(int n);
 
-template<class DataType>
-Matrix<float> ones(const Matrix<DataType>& A);
+template<class ElemType>
+Matrix<float> eye(const Matrix<ElemType>& A);
+Matrix<float> eye(int rows, int cols);
 Matrix<float> eye(int n);
 
-template<class DataType>
-Matrix<float> eye(const Matrix<DataType>& A);
-
+template<class ElemType>
+Matrix<float> rand(const Matrix<ElemType>& A);
 Matrix<float> rand(int rows, int cols);
 Matrix<float> rand(int n);
-
-template<class DataType>
-Matrix<float> rand(const Matrix<DataType>& A);
-Matrix<float> randn(int n);
-
-template<class DataType>
-Matrix<float> randn(const Matrix<DataType>& A);
 
 template<class DataType>
 Matrix<DataType> reshape(const Matrix<DataType>& A, int m, int n);

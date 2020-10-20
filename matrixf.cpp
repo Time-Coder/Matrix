@@ -1,25 +1,5 @@
 ﻿#include "matrix.h"
 
-Matrix<float> to(float start, float step, float end)
-{
-    int n = int((end-start)/step);
-	Matrix<float> x(1, n+1);
-	
-	x._data[0] = start;
-	for(int i = 1; i < n; i++)
-	{
-		x._data[i] = x._data[i-1] + step;
-	}
-	x._data[n] = end;
-
-	return x;
-}
-
-Matrix<float> to(float start, float end)
-{
-	return to(start, 1.0f, end);
-}
-
 Matrix<float> zeros(int rows, int cols)
 {
 	return Matrix<float>(rows, cols, 0.0f);
@@ -47,7 +27,7 @@ Matrix<float> eye(int rows, int cols)
     int k = rows + 1;
 	for(int i = 0; i < n; i++)
 	{
-		In._data[i*k] = 1.0f;
+		In(i*k) = 1.0f;
 	}
 
 	return In;
@@ -55,16 +35,23 @@ Matrix<float> eye(int rows, int cols)
 
 Matrix<float> eye(int n)
 {
-	return eye(n, n);
+	Matrix<float> In(n, n, 0.0f);
+    int k = n + 1;
+	for(int i = 0; i < n; i++)
+	{
+		In(i*k) = 1.0f;
+	}
+
+	return In;
 }
 
 Matrix<float> rand(int rows, int cols)
 {
 	Matrix<float> A(rows, cols);
 	srand((unsigned)time(NULL));
-	for(int i = 0; i < A._size; i++)
+	for(int i = 0; i < A.size(); i++)
 	{
-		A._data[i] = rand() / float(RAND_MAX);
+		A(i) = rand() / float(RAND_MAX);
 	}
 
 	return A;
