@@ -1,1604 +1,432 @@
-﻿#ifdef MATRIX_TEMPLATE_IMPLEMENT
+﻿#include <matrix.h>
 
-template<class DataType>
-Matrix<DataType>::Matrix(int rows, int cols)
+Matrix<float> zeros(int rows, int cols)
 {
-	n_rows = rows;
-	n_cols = cols;
-	_size = rows * cols;
-	_data = new DataType[rows * cols];
+	return Matrix<float>(rows, cols, 0.0f);
 }
 
-template<class DataType>
-void Matrix<DataType>::print_size()const
+Matrix<float> zeros(int n)
 {
-    cout << n_rows << "x" << n_cols << " ";
+	return Matrix<float>(n, n, 0.0f);
 }
 
-template<class DataType>
-Matrix<DataType>::Matrix(int rows, int cols, const DataType& value)
+Matrix<float> ones(int rows, int cols)
 {
-	n_rows = rows;
-	n_cols = cols;
-	_size = rows * cols;
-	_data = new DataType[_size];
-	for(int i = 0; i < _size; i++)
-	{
-		_data[i] = value;
-	}
+	return Matrix<float>(rows, cols, 1.0f);
 }
 
-template<class DataType>
-Matrix<DataType>::Matrix(int rows, int cols, const DataType* values)
+Matrix<float> ones(int n)
 {
-	n_rows = rows;
-	n_cols = cols;
-	_size = rows * cols;
-	_data = new DataType[_size];
-	for(int i = 0; i < _size; i++)
-	{
-		_data[i] = values[i];
-	}
+	return Matrix<float>(n, n, 1.0f);
 }
 
-template<class DataType>
-Matrix<DataType>::Matrix(const Matrix<DataType>& A)
+Matrix<float> eye(int rows, int cols)
 {
-	n_rows = A.n_rows;
-	n_cols = A.n_cols;
-	_size = A._size;
-	_data = new DataType[_size];
-	for(int i = 0; i < _size; i++)
+	Matrix<float> In(rows, cols, 0.0f);
+    int n = rows < cols ? rows : cols;
+    int k = rows + 1;
+	for(int i = 0; i < n; i++)
 	{
-		_data[i] = A._data[i];
+		In(i*k) = 1.0f;
 	}
+
+	return In;
 }
 
-template<class DataType>
-template<class ElemType>
-Matrix<DataType>::Matrix(const Matrix<ElemType>& A)
+Matrix<float> eye(int n)
 {
-	n_rows = A.rows();
-	n_cols = A.cols();
-	_size = n_rows * n_cols;
-	_data = new DataType[_size];
-	for(int i = 0; i < _size; i++)
+	Matrix<float> In(n, n, 0.0f);
+    int k = n + 1;
+	for(int i = 0; i < n; i++)
 	{
-		_data[i] = (DataType)(A(i));
-		// _data[i] = (DataType)(A._data[i]);
+		In(i*k) = 1.0f;
 	}
+
+	return In;
 }
 
-template<class DataType>
-Matrix<DataType>::Matrix(Matrix<DataType>&& A)
+Matrix<float> rand(int rows, int cols)
 {
-	n_rows = A.n_rows;
-	n_cols = A.n_cols;
-	_size = A._size;
-	_data = A._data;
-
-	A.n_rows = 0;
-	A.n_cols = 0;
-	A._size = 0;
-	A._data = NULL;
-}
-
-template<class DataType>
-Matrix<DataType>::Matrix(const vector<DataType>& x)
-{
-	n_rows = x.size();
-	if(!n_rows)
+	Matrix<float> A(rows, cols);
+	srand((unsigned)time(NULL));
+	for(int i = 0; i < A.size(); i++)
 	{
-		return;
-	}
-	n_cols = 1;
-	_size = n_rows;
-	_data = new DataType[_size];
-	for(int i = 0; i < _size; i++)
-	{
-		_data[i] = x[i];
-	}
-}
-
-template<class DataType>
-Matrix<DataType>::Matrix(const vector< vector<DataType> >& X)
-{
-    n_rows = (int)(X.size());
-	if(n_rows == 0)
-	{
-		return;
-	}
-
-    n_cols = (int)(X[0].size());
-    _size = n_rows * n_cols;
-	_data = new DataType[_size];
-	for(int i = 0; i < n_rows; i++)
-	{
-        if(X[i].size() != (unsigned int)n_cols)
-		{
-			cout << "Warning in \'Matrix<DataType>::Matrix<DataType>(const vector< vector<float> >& X)\'" << endl
-				 << "Each vector<DataType> doesn't has the same size." << endl;
-			clear();
-			return;
-		}
-		for(int j = 0; j < n_cols; j++)
-		{
-			_data[i + j * n_rows] = X[i][j];
-		}
-	}
-}
-
-template<class DataType>
-Matrix<DataType>::Matrix(const initializer_list<DataType>& x)
-{
-    n_rows = (int)(x.size());
-	if(!n_rows)
-	{
-		return;
-	}
-	n_cols = 1;
-	_size = n_rows;
-	_data = new DataType[_size];
-	typename initializer_list<DataType>::const_iterator it = x.begin();
-	for(int i = 0; i < _size; i++, it++)
-	{
-		_data[i] = *it;
-	}
-}
-
-template<class DataType>
-Matrix<DataType>::Matrix(const initializer_list< initializer_list<DataType> >& X)
-{
-    n_rows = (int)(X.size());
-	if(n_rows == 0)
-	{
-		return;
-	}
-
-	typename initializer_list< initializer_list<DataType> >::const_iterator it = X.begin();
-    n_cols = (int)(it->size());
-    _size = n_rows * n_cols;
-	_data = new DataType[n_rows * n_cols];
-	for(int i = 0; i < n_rows; i++, it++)
-	{
-        if(it->size() != (unsigned int)n_cols)
-		{
-			cout << "Warning in \'Matrix<DataType>::Matrix<DataType>(const initializer_list< initializer_list<float> >& X)\'" << endl
-				 << "Each initializer_list<float> doesn't has the same size." << endl;
-			clear();
-			return;
-		}
-		typename initializer_list<DataType>::iterator subit = it->begin();
-		for(int j = 0; j < n_cols; j++, subit++)
-		{
-			_data[i + j * n_rows] = *subit;
-		}
-	}
-}
-
-template<class DataType>
-Matrix<DataType>::Matrix(const initializer_list< Matrix<DataType> >& X)
-{
-    int sum_cols = 0;
-    int common_rows = X.begin()->n_rows;
-    for(auto it = X.begin(); it != X.end(); it++)
-    {
-        sum_cols += it->n_cols;
-        if(it->n_rows != common_rows)
-        {
-            cout << "Error when using initializer_list< Matrix<DataType> > to initialize a Matrix!" << endl
-                 << "Each Matrix must have the same size!" << endl;
-            exit(-1);
-        }
-    }
-
-    n_rows = common_rows;
-    n_cols = sum_cols;
-    _size = n_rows * n_cols;
-    _data = new DataType[_size];
-
-    DataType* ptr_data = _data;
-    for(auto it = X.begin(); it != X.end(); it++)
-    {
-        int it_size = it->size();
-        for(int i = 0; i < it_size; i++)
-        {
-            *ptr_data = it->_data[i];
-            ptr_data++;
-        }
-    }
-}
-
-template<class DataType>
-Matrix<DataType>::Matrix(const DataType& x)
-{
-	n_rows = 1;
-	n_cols = 1;
-	_size = 1;
-	_data = new DataType[1];
-	_data[0] = x;
-}
-
-template<class DataType>
-Matrix<DataType>::~Matrix()
-{
-	n_rows = 0;
-	n_cols = 0;
-	_size = 0;
-	if(_data)
-	{
-		delete [] _data;
-		_data = NULL;
-	}
-}
-
-template<class DataType>
-void Matrix<DataType>::clear()
-{
-	n_rows = 0;
-	n_cols = 0;
-	_size = 0;
-	if(_data)
-	{
-		delete [] _data;
-		_data = NULL;
-	}
-}
-
-template<class DataType>
-Matrix<DataType>& Matrix<DataType>::operator =(const Matrix<DataType>& A)
-{
-	if(&A == this)
-	{
-		return *this;
-	}
-
-	if(n_rows != A.n_rows || n_cols != A.n_cols)
-	{
-		if(_size != A._size)
-		{
-			_size = A._size;
-			delete [] _data;
-			_data = new DataType[_size];
-		}
-		n_rows = A.n_rows;
-		n_cols = A.n_cols;
-	}
-
-	for(int i = 0; i < _size; i++)
-	{
-		_data[i] = A._data[i];
-	}
-
-	return *this;
-}
-
-template<class DataType>
-Matrix<DataType>& Matrix<DataType>::operator =(Matrix<DataType>&& A)
-{
-	if(&A == this)
-	{
-		return *this;
-	}
-
-	n_rows = A.n_rows;
-	n_cols = A.n_cols;
-	_size = A._size;
-	_data = A._data;
-
-	A.n_rows = 0;
-	A.n_cols = 0;
-	A._size = 0;
-	A._data = NULL;
-
-	return *this;
-}
-
-template<class DataType>
-template<class ElemType>
-Matrix<DataType>& Matrix<DataType>::operator =(const Matrix<ElemType>& A)
-{
-    if(n_rows != A.rows() || n_cols != A.cols())
-	{
-        if(_size != A.size())
-		{
-            _size = A.size();
-			delete [] _data;
-			_data = new DataType[_size];
-		}
-        n_rows = A.rows();
-        n_cols = A.cols();
-	}
-
-	for(int i = 0; i < _size; i++)
-	{
-        _data[i] = (DataType)(A.data()[i]);
-	}
-
-	return *this;
-}
-
-template<class DataType>
-template<class ElemType>
-Matrix<DataType>::operator Matrix<ElemType>()const
-{
-	Matrix<ElemType> A(n_rows, n_cols);
-	for(int i = 0; i < _size; i++)
-	{
-		A._data[i] = (ElemType)(_data[i]);
+		A(i) = rand() / float(RAND_MAX);
 	}
 
 	return A;
 }
 
-template<class DataType>
-DataType& Matrix<DataType>::operator ()(int i)
+Matrix<float> rand(int n)
 {
-    if(i < 0 || i >= _size)
-    {
-        cout << "Error using Matrix<DataType>(i):" << endl
-             << "index is out of bande!" << endl;
-        exit(-1);
-    }
-
-    return _data[i];
+	return rand(n, n);
 }
 
-template<class DataType>
-DataType Matrix<DataType>::operator ()(int i)const
+float norm(const Matrix<float>& v)
 {
-    if(i < 0 || i >= _size)
-    {
-        cout << "Error using Matrix<DataType>(i):" << endl
-             << "index is out of bande!" << endl;
-        exit(-1);
-    }
-
-    return _data[i];
+    return sqrt((v.t() * v)._data[0]);
 }
 
-template<class DataType>
-DataType& Matrix<DataType>::operator [](int i)
+float dot(const Matrix<float>& v1, const Matrix<float>& v2)
 {
-    if(i < 0 || i >= _size)
-    {
-        cout << "Error using Matrix<DataType>(i):" << endl
-             << "index is out of bande!" << endl;
-        exit(-1);
-    }
-
-    return _data[i];
+    return (v1.t() * v2)._data[0];
 }
 
-template<class DataType>
-DataType Matrix<DataType>::operator [](int i)const
+Matrix<float> cross(const Matrix<float>& v1, const Matrix<float>& v2)
 {
-    if(i < 0 || i >= _size)
-    {
-        cout << "Error using Matrix<DataType>(i):" << endl
-             << "index is out of bande!" << endl;
-        exit(-1);
-    }
-
-    return _data[i];
+    return Matrix<float>({v1._data[1]*v2._data[2]-v1._data[2]*v2._data[1],
+                          v1._data[2]*v2._data[0]-v1._data[0]*v2._data[2],
+                          v1._data[0]*v2._data[1]-v1._data[1]*v2._data[0]});
 }
 
-template<class DataType>
-DataType& Matrix<DataType>::operator ()(int i, int j)
+Matrix<float>& normalize(Matrix<float>& A)
 {
-	if(i < 0 || i >= n_rows || j < 0 || j >= n_cols)
+	return A /= sqrt((A.t() * A)._data[0]);
+}
+
+Matrix<float> normalize(const Matrix<float>& A)
+{
+    return A/sqrt((A.t() * A)._data[0]);
+}
+
+Matrix<float> sin(const Matrix<float>& A)
+{
+    Matrix<float> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
 	{
-		cout << "Error using Matrix<DataType>(i, j):" << endl
-			 << "index is out of bande!" << endl;
-		exit(-1);
-	}
-
-	return _data[i + j * n_rows];
-}
-
-template<class DataType>
-DataType Matrix<DataType>::operator ()(int i, int j)const
-{
-	if(i < 0 || i >= n_rows || j < 0 || j >= n_cols)
-	{
-		cout << "Error using Matrix<DataType>(i, j):" << endl
-			 << "index is out of bande!" << endl;
-		exit(-1);
-	}
-
-	return _data[i + j * n_rows];
-}
-
-template<class DataType>
-int Matrix<DataType>::rows()const
-{
-	return n_rows;
-}
-
-template<class DataType>
-int Matrix<DataType>::cols()const
-{
-	return n_cols;
-}
-
-template<class DataType>
-int Matrix<DataType>::size()const
-{
-	return _size;
-}
-
-template<class DataType>
-DataType* Matrix<DataType>::data()const
-{
-	return _data;
-}
-
-template<class DataType>
-bool Matrix<DataType>::empty()const
-{
-	return _size == 0;
-}
-
-template<class DataType>
-DataType Matrix<DataType>::trace()const
-{
-	if(empty())
-	{
-		cout << "Error using \'float trace()const\':" << endl
-			 << "Matrix<DataType> is empty!" << endl;
-		exit(-1);
-	}
-	if(n_rows != n_cols)
-	{
-		cout << "Error using \'float trace()const\':" << endl
-			 << "Matrix<DataType> must be square!" << endl;
-		exit(-1);
-	}
-
-	DataType tr = _data[0];
-	int k = n_rows + 1;
-	for(int i = 1; i < n_rows; i++)
-	{
-		tr += _data[i * k];
-	}
-
-	return tr;
-}
-
-template<class DataType>
-Matrix<DataType> Matrix<DataType>::t()const
-{
-	Matrix<DataType> A(n_cols, n_rows);
-	for(int i = 0; i < A.n_rows; i++)
-	{
-		for(int j = 0; j < A.n_cols; j++)
-		{
-			A(i, j) = (*this)(j, i);
-		}
-	}
-
-	return A;
-}
-
-template<class DataType>
-Matrix<DataType>& Matrix<DataType>::reshape(int m, int n)
-{
-	if(m == AUTO)
-	{
-		m = _size / n;
-	}
-	if(n == AUTO)
-	{
-		n = _size / m;
-	}
-
-	if(m * n != _size)
-	{
-		cout << "Error using \'A.reshape(m, n)\'" << endl
-			 << "m * n != A.n_rows * A.n_cols" << endl;
-		exit(-1);
-	}
-
-	n_rows = m;
-	n_cols = n;
-
-	return *this;
-}
-
-template<class DataType>
-Matrix<DataType> Matrix<DataType>::repmat(int m, int n)const
-{
-	if(m == 1 && n == 1)
-	{
-		return *this;
-	}
-
-	Matrix<DataType> B(m * n_rows, n * n_cols);
-	for(int i = 0; i < B.n_rows; i++)
-	{
-		for(int j = 0; j < B.n_cols; j++)
-		{
-			B(i, j) = (*this)(i % m, j % n);
-		}
+        B._data[i] = sin(A._data[i]);
 	}
 
 	return B;
 }
 
-template<class DataType>
-Matrix<DataType> Matrix<DataType>::repelem(int m, int n)const
+Matrix<float> cos(const Matrix<float>& A)
 {
-	if(m == 1 && n == 1)
+    Matrix<float> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
 	{
-		return (*this);
-	}
-
-	Matrix<DataType> B(m * n_rows, n * n_cols);
-	for(int i = 0; i < B.n_rows; i++)
-	{
-		for(int j = 0; j < B.n_cols; j++)
-		{
-			B(i, j) = (*this)(i / m, j / n);
-		}
+        B._data[i] = cos(A._data[i]);
 	}
 
 	return B;
 }
 
-template<class DataType>
-DataType Matrix<DataType>::max()const
+Matrix<float> tan(const Matrix<float>& A)
 {
-	DataType Max = _data[0];
-	for(int i = 0; i < _size; i++)
+    Matrix<float> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
 	{
-		if( _data[i] > Max )
-		{
-			Max = _data[i];
-		}
-	}
-
-	return Max;
-}
-
-template<class DataType>
-DataType Matrix<DataType>::min()const
-{
-	DataType Min = _data[0];
-	for(int i = 0; i < _size; i++)
-	{
-		if( _data[i] < Min )
-		{
-			Min = _data[i];
-		}
-	}
-
-	return Min;
-}
-
-template<class DataType>
-Matrix<DataType>& Matrix<DataType>::operator +=(const Matrix<DataType>& A)
-{
-	if(n_rows != A.n_rows || n_cols != A.n_cols)
-	{
-		cout << "Error using +=, two matrix must have the same size!" << endl;
-		exit(-1);
-	}
-
-	for(int i = 0; i < _size; i++)
-	{
-		_data[i] += A._data[i];
-	}
-
-	return *this;
-}
-
-template<class DataType>
-Matrix<DataType>& Matrix<DataType>::operator -=(const Matrix<DataType>& A)
-{
-	if(n_rows != A.n_rows || n_cols != A.n_cols)
-	{
-		cout << "Error using -=, two matrix must have the same size!" << endl;
-		exit(-1);
-	}
-
-	for(int i = 0; i < _size; i++)
-	{
-		_data[i] -= A._data[i];
-	}
-
-	return *this;
-}
-
-template<class DataType>
-Matrix<DataType>& Matrix<DataType>::operator *=(const Matrix<DataType>& A)
-{
-	return *this = ((*this) * A);
-}
-
-template<class DataType>
-Matrix<DataType>& Matrix<DataType>::operator %=(const Matrix<DataType>& A)
-{
-	if(n_rows != A.n_rows || n_cols != A.n_cols)
-	{
-		cout << "Error using %=, two matrix must have the same size!" << endl;
-		exit(-1);
-	}
-	
-	for(int i = 0; i < _size; i++)
-	{
-		_data[i] *= A._data[i];
-	}
-
-	return *this;
-}
-
-template<class DataType>
-Matrix<DataType>& Matrix<DataType>::operator /=(const Matrix<DataType>& A)
-{
-	if(n_rows != A.n_rows || n_cols != A.n_cols)
-	{
-		cout << "Error using /=, two matrix must have the same size!" << endl;
-		exit(-1);
-	}
-
-	for(int i = 0; i < _size; i++)
-	{
-		_data[i] /= A._data[i];
-	}
-
-	return *this;
-}
-
-template<class DataType>
-Matrix<DataType>& Matrix<DataType>::operator ^=(const Matrix<DataType>& A)
-{
-	return *this = (*this) ^ A;
-}
-
-template<class DataType>
-Matrix<DataType>& Matrix<DataType>::operator +=(const DataType& a)
-{
-	for(int i = 0; i < _size; i++)
-	{
-		_data[i] += a;
-	}
-
-	return *this;
-}
-
-template<class DataType>
-Matrix<DataType>& Matrix<DataType>::operator -=(const DataType& a)
-{
-	for(int i = 0; i < _size; i++)
-	{
-		_data[i] -= a;
-	}
-
-	return *this;
-}
-
-template<class DataType>
-Matrix<DataType>& Matrix<DataType>::operator *=(const DataType& a)
-{
-	for(int i = 0; i < _size; i++)
-	{
-		_data[i] *= a;
-	}
-
-	return *this;
-}
-
-template<class DataType>
-Matrix<DataType>& Matrix<DataType>::operator /=(const DataType& a)
-{
-	for(int i = 0; i < _size; i++)
-	{
-		_data[i] /= a;
-	}
-
-	return *this;
-}
-
-template<class DataType>
-Matrix<DataType>& Matrix<DataType>::operator ^=(const DataType& a)
-{
-	for(int i = 0; i < _size; i++)
-	{
-		_data[i] = pow(_data[i], a);
-	}
-
-	return *this;
-}
-
-template<class DataType>
-Matrix<DataType> Matrix<DataType>::operator -()const
-{
-	Matrix<DataType> A(n_rows, n_cols);
-	for(int i = 0; i < _size; i++)
-	{
-		A._data[i] = -_data[i];
-	}
-
-	return A;
-}
-
-template<class DataType>
-Matrix<DataType> operator +(const Matrix<DataType>& A, const Matrix<DataType>& B)
-{
-	if(!same_size(A, B))
-	{
-		cout << "Error using \'A + B\':" << endl
-			 << "Matrix<DataType> dimension is not match!" << endl;
-		exit(-1);
-	}
-
-	Matrix<DataType> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = A._data[i] + B._data[i];
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<DataType> operator -(const Matrix<DataType>& A, const Matrix<DataType>& B)
-{
-	if(!same_size(A, B))
-	{
-		cout << "Error using \'A - B\':" << endl
-			 << "Matrix<DataType> dimension is not match!" << endl;
-		exit(-1);
-	}
-
-	Matrix<DataType> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = A._data[i] - B._data[i];
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<DataType> operator *(const Matrix<DataType>& A, const Matrix<DataType>& B)
-{
-	if(A.n_cols != B.n_rows)
-	{
-		cout << "Error using \'A * B\':" << endl
-			 << "Matrix<DataType> dimension is not match!" << endl;
-		exit(-1);
-	}
-
-	Matrix<DataType> C(A.n_rows, B.n_cols);
-	for(int i = 0; i < C.n_rows; i++)
-	{
-		for(int j = 0; j < C.n_cols; j++)
-		{
-			float S = 0.0f;
-			for(int k = 0; k < A.n_cols; k++)
-			{
-				S += A(i, k) * B(k, j);
-			}
-			C(i, j) = S;
-		}
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<DataType> operator %(const Matrix<DataType>& A, const Matrix<DataType>& B)
-{
-	if(!same_size(A, B))
-	{
-		cout << "Error using \'A % B\':" << endl
-			 << "Matrix<DataType> dimension is not match!" << endl;
-		exit(-1);
-	}
-
-	Matrix<DataType> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = A._data[i] * B._data[i];
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<DataType> operator ^(const Matrix<DataType>& A, const Matrix<DataType>& B)
-{
-	if(!same_size(A, B))
-	{
-		cout << "Error using \'A ^ B\':" << endl
-			 << "Matrix<DataType> dimension is not match!" << endl;
-		exit(-1);
-	}
-
-	Matrix<DataType> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = pow(A._data[i], B._data[i]);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<DataType> operator +(const Matrix<DataType>& A, const DataType& b)
-{
-	Matrix<DataType> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = A._data[i] + b;
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<DataType> operator -(const Matrix<DataType>& A, const DataType& b)
-{
-	Matrix<DataType> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = A._data[i] - b;
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<DataType> operator *(const Matrix<DataType>& A, const DataType& b)
-{
-	Matrix<DataType> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = A._data[i] * b;
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<DataType> operator %(const Matrix<DataType>& A, const DataType& b)
-{
-	Matrix<DataType> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = A._data[i] * b;
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<DataType> operator /(const Matrix<DataType>& A, const DataType& b)
-{
-	Matrix<DataType> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = A._data[i] / b;
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<DataType> operator ^(const Matrix<DataType>& A, const DataType& b)
-{
-	Matrix<DataType> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = pow(A._data[i], b);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<DataType> operator +(const DataType& a, const Matrix<DataType>& B)
-{
-	Matrix<DataType> C(B.n_rows, B.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = a + B._data[i];
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<DataType> operator -(const DataType& a, const Matrix<DataType>& B)
-{
-	Matrix<DataType> C(B.n_rows, B.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = a - B._data[i];
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<DataType> operator *(const DataType& a, const Matrix<DataType>& B)
-{
-	Matrix<DataType> C(B.n_rows, B.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = a * B._data[i];
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<DataType> operator %(const DataType& a, const Matrix<DataType>& B)
-{
-	Matrix<DataType> C(B.n_rows, B.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = a * B._data[i];
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<DataType> operator /(const DataType& a, const Matrix<DataType>& B)
-{
-	Matrix<DataType> C(B.n_rows, B.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = a / B._data[i];
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<DataType> operator ^(const DataType& a, const Matrix<DataType>& B)
-{
-	Matrix<DataType> C(B.n_rows, B.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = pow(a, B._data[i]);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<bool> operator >(const Matrix<DataType>& A, const Matrix<DataType>& B)
-{
-	if(!same_size(A, B))
-	{
-		cout << "Error using \'A > B\'" << endl
-			 << "Matrix<DataType> dimension is not match!" << endl;
-		exit(-1);
-	}
-
-	Matrix<bool> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = (A._data[i] > B._data[i]);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<bool> operator <(const Matrix<DataType>& A, const Matrix<DataType>& B)
-{
-	if(!same_size(A, B))
-	{
-		cout << "Error using \'A < B\'" << endl
-			 << "Matrix<DataType> dimension is not match!" << endl;
-		exit(-1);
-	}
-
-	Matrix<bool> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = (A._data[i] < B._data[i]);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<bool> operator >=(const Matrix<DataType>& A, const Matrix<DataType>& B)
-{
-	if(!same_size(A, B))
-	{
-		cout << "Error using \'A >= B\'" << endl
-			 << "Matrix<DataType> dimension is not match!" << endl;
-		exit(-1);
-	}
-
-	Matrix<bool> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = (A._data[i] >= B._data[i]);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<bool> operator <=(const Matrix<DataType>& A, const Matrix<DataType>& B)
-{
-	if(!same_size(A, B))
-	{
-		cout << "Error using \'A <= B\'" << endl
-			 << "Matrix<DataType> dimension is not match!" << endl;
-		exit(-1);
-	}
-
-	Matrix<bool> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = (A._data[i] <= B._data[i]);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<bool> operator ==(const Matrix<DataType>& A, const Matrix<DataType>& B)
-{
-	if(!same_size(A, B))
-	{
-		cout << "Error using \'A == B\'" << endl
-			 << "Matrix<DataType> dimension is not match!" << endl;
-		exit(-1);
-	}
-
-	Matrix<bool> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = (A._data[i] == B._data[i]);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<bool> operator !=(const Matrix<DataType>& A, const Matrix<DataType>& B)
-{
-	if(!same_size(A, B))
-	{
-		cout << "Error using \'A != B\'" << endl
-			 << "Matrix<DataType> dimension is not match!" << endl;
-		exit(-1);
-	}
-
-	Matrix<bool> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = (A._data[i] != B._data[i]);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<bool> operator >(const Matrix<DataType>& A, const DataType& b)
-{
-	Matrix<bool> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = (A._data[i] > b);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<bool> operator <(const Matrix<DataType>& A, const DataType& b)
-{
-	Matrix<bool> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = (A._data[i] < b);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<bool> operator >=(const Matrix<DataType>& A, const DataType b)
-{
-	Matrix<bool> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = (A._data[i] >= b);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<bool> operator <=(const Matrix<DataType>& A, const DataType& b)
-{
-	Matrix<bool> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = (A._data[i] <= b);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<bool> operator ==(const Matrix<DataType>& A, const DataType& b)
-{
-	Matrix<bool> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = (A._data[i] == b);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<bool> operator !=(const Matrix<DataType>& A, const DataType& b)
-{
-	Matrix<bool> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = (A._data[i] != b);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<bool> operator >(const DataType& b, const Matrix<DataType>& A)
-{
-	Matrix<bool> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = (b > A._data[i]);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<bool> operator <(const DataType& b, const Matrix<DataType>& A)
-{
-	Matrix<bool> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = (b < A._data[i]);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<bool> operator >=(const DataType& b, const Matrix<DataType>& A)
-{
-	Matrix<bool> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = (b >= A._data[i]);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<bool> operator <=(const DataType& b, const Matrix<DataType>& A)
-{
-	Matrix<bool> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = (b <= A._data[i]);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<bool> operator ==(const DataType& b, const Matrix<DataType>& A)
-{
-	Matrix<bool> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = (b == A._data[i]);
-	}
-
-	return C;
-}
-
-template<class DataType>
-Matrix<bool> operator !=(const DataType& b, const Matrix<DataType>& A)
-{
-	Matrix<bool> C(A.n_rows, A.n_cols);
-	for(int i = 0; i < C._size; i++)
-	{
-		C._data[i] = (b != A._data[i]);
-	}
-
-	return C;
-}
-
-template<class DataType>
-ostream & operator <<(ostream& o, Matrix<DataType> A)
-{
-	o << endl;
-	int *longest_size = new int[A.n_cols];
-    for(int j = 0; j < A.n_cols; j++)
-	{
-        longest_size[j] = (int)(Matrix<DataType>::cout2string(A(0, j)).size());
-		for(int i = 1; i < A.n_rows; i++)
-		{
-            int current_size = (int)(Matrix<DataType>::cout2string(A(i, j)).size());
-			if(current_size > longest_size[j])
-			{
-				longest_size[j] = current_size;
-			}
-		}
-	}
-	
-	for(int i = 0; i < A.n_rows; i++)
-	{
-		for(int j = 0; j < A.n_cols; j++)
-		{
-            int space_length = longest_size[j] - (int)(Matrix<DataType>::cout2string(A(i, j)).size()) + 2;
-			if(A(i, j) >= 0)
-			{
-				o << " " << A(i, j) << Matrix<DataType>::multi_space(space_length);
-			}
-			else
-			{
-				o << A(i, j) << Matrix<DataType>::multi_space(space_length+1);
-			}
-		}
-		if(i != A.n_rows-1)
-		{
-			o << endl;
-		}
-	}
-	delete longest_size;
-
-	return o;
-}
-
-template<class DataType>
-void meshgrid(Matrix<DataType>& x, Matrix<DataType>& y)
-{
-	x.reshape(1, x._size);
-	y.reshape(y._size, 1);
-
-	Matrix<DataType> temp = ones(x);
-	x = ones(y) * x;
-	y = y * temp;
-}
-
-template<class DataType>
-Matrix<float> zeros(const Matrix<DataType>& A)
-{
-	return Matrix<float>(A.rows(), A.cols(), 0.0f);
-}
-
-template<class DataType>
-Matrix<float> ones(const Matrix<DataType>& A)
-{
-	return Matrix<float>(A.rows(), A.cols(), 1.0f);
-}
-
-template<class DataType>
-Matrix<float> eye(const Matrix<DataType>& A)
-{
-	return eye(A.rows(), A.cols());
-}
-
-template<class DataType>
-Matrix<float> rand(const Matrix<DataType>& A)
-{
-	return rand(A.rows(), A.cols());
-}
-
-template<class DataType>
-Matrix<DataType> crossmat(const Matrix<DataType>& vec)
-{
-	return Matrix<DataType>({{   0,    -vec(2),  vec(1)},
-							 { vec(2),    0,    -vec(0)},
-							 {-vec(1),  vec(0),    0}});
-}
-
-template<class DataType>
-Matrix<DataType> reshape(const Matrix<DataType>& A, int m, int n)
-{
-	Matrix<DataType> C(A);
-	return C.reshape(m, n);
-}
-
-template<class DataType>
-Matrix<DataType> repmat(const Matrix<DataType>& A, int m, int n)
-{
-	Matrix<DataType> B(m * A.n_rows, n * A.n_cols);
-	for(int i = 0; i < B.n_rows; i++)
-	{
-		for(int j = 0; j < B.n_cols; j++)
-		{
-			B(i, j) = A(i % m, j % n);
-		}
+        B._data[i] = tan(A._data[i]);
 	}
 
 	return B;
 }
 
-template<class DataType>
-Matrix<DataType> repelem(const Matrix<DataType>& A, int m, int n)
+Matrix<float> asin(const Matrix<float>& A)
 {
-	Matrix<DataType> B(m * A.n_rows, n * A.n_cols);
-	for(int i = 0; i < B.n_rows; i++)
+    Matrix<float> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
 	{
-		for(int j = 0; j < B.n_cols; j++)
-		{
-			B(i, j) = A(i / m, j / n);
-		}
+        B._data[i] = asin(A._data[i]);
 	}
 
 	return B;
 }
 
-template<class DataType>
-bool same_size(const Matrix<DataType>& A, const Matrix<DataType>& B)
+Matrix<float> acos(const Matrix<float>& A)
 {
-    return (A.rows() == B.rows()) && (A.cols() == B.cols());
+    Matrix<float> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
+	{
+        B._data[i] = acos(A._data[i]);
+	}
+
+	return B;
 }
 
-template<class DataType>
-string Matrix<DataType>::cout2string(const DataType& element)
+Matrix<float> atan(const Matrix<float>& A)
 {
-    ostringstream oss;
-    oss << element;
-    return oss.str();
+    Matrix<float> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
+	{
+        B._data[i] = atan(A._data[i]);
+	}
+
+	return B;
 }
 
-template<class DataType>
-int Matrix<DataType>::sign(float a)
+Matrix<float> atan2(const Matrix<float>& Y, const Matrix<float>& X)
 {
-    return a >= 0 ? 1 : -1;
-}
-
-template<class DataType>
-string Matrix<DataType>::multi_space(int n)
-{
-    string space;
-    for(int i = 0; i < n; i++)
+    if(!same_size(Y, X))
     {
-        space += " ";
+        cout << "Error using atan2(Y, X)!" << endl
+             << "Y and X must have the same size!" << endl;
+        exit(-1);
     }
 
-    return space;
-}
-
-template<class DataType>
-bool Matrix<DataType>::isZero(double a, double epsilon)
-{
-	return a < epsilon && a > -epsilon;
-}
-
-template<class DataType>
-void Matrix<DataType>::swap_row(int row1, int row2)
-{
-	for(int j = 0; j < n_cols; j++)
+    Matrix<float> Z(Y.n_rows, Y.n_cols);
+    for(int i = 0; i < Z._size; i++)
 	{
-		std::swap(_data[row1 + j * n_rows], _data[row2 + j * n_rows]);
+        Z._data[i] = atan2(Y._data[i], X._data[i]);
 	}
+
+	return Z;
 }
 
-template<class DataType>
-void Matrix<DataType>::divide_row(int row, const DataType& k)
+Matrix<float> sinh(const Matrix<float>& A)
 {
-	for(int j = 0; j < n_cols; j++)
+    Matrix<float> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
 	{
-		_data[row + j * n_rows] /= k;
+        B._data[i] = sinh(A._data[i]);
 	}
+
+	return B;
 }
 
-template<class DataType>
-void Matrix<DataType>::add_row(int row1, const DataType& k, int row2)
+Matrix<float> cosh(const Matrix<float>& A)
 {
-	for(int j = 0; j < n_cols; j++)
+    Matrix<float> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
 	{
-		_data[row2 + j * n_rows] += k * _data[row1 + j * n_rows];
+        B._data[i] = cosh(A._data[i]);
 	}
+
+	return B;
 }
 
-// 没有使用二分查找
-template<class DataType>
-Matrix<DataType> interp1(const Matrix<float>& x, const Matrix<DataType>& v, const Matrix<float>& xi)
+Matrix<float> tanh(const Matrix<float>& A)
 {
-	int n  = x.size();
-	if(v.size() != n)
+    Matrix<float> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
 	{
-		cout << "Error in \"Matrix<DataType> interp1(const Matrix<float>& x, const Matrix<DataType>& v, const Matrix<float>& xi):\"" << endl
-			 << "x and v must have the same size!" << endl;
+        B._data[i] = tanh(A._data[i]);
+	}
+
+	return B;
+}
+
+Matrix<float> asinh(const Matrix<float>& A)
+{
+    Matrix<float> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
+	{
+        B._data[i] = asinh(A._data[i]);
+	}
+
+	return B;
+}
+
+Matrix<float> acosh(const Matrix<float>& A)
+{
+    Matrix<float> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
+	{
+        B._data[i] = acosh(A._data[i]);
+	}
+
+	return B;
+}
+
+Matrix<float> atanh(const Matrix<float>& A)
+{
+    Matrix<float> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
+	{
+        B._data[i] = atanh(A._data[i]);
+	}
+
+	return B;
+}
+
+Matrix<float> exp(const Matrix<float>& A)
+{
+    Matrix<float> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
+	{
+        B._data[i] = exp(A._data[i]);
+	}
+
+	return B;
+}
+
+Matrix<float> log(const Matrix<float>& A)
+{
+    Matrix<float> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
+	{
+        B._data[i] = log(A._data[i]);
+	}
+
+	return B;
+}
+
+Matrix<float> log2(const Matrix<float>& A)
+{
+    Matrix<float> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
+	{
+        B._data[i] = log2(A._data[i]);
+	}
+
+	return B;
+}
+
+Matrix<float> log10(const Matrix<float>& A)
+{
+    Matrix<float> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
+	{
+        B._data[i] = log10(A._data[i]);
+	}
+
+	return B;
+}
+
+Matrix<float> abs(const Matrix<float>& A)
+{
+    Matrix<float> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
+	{
+        B._data[i] = fabs(A._data[i]);
+	}
+
+	return B;
+}
+
+Matrix<int> floor(const Matrix<float>& A)
+{
+    Matrix<int> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
+	{
+        B._data[i] = (int)floor(A._data[i]);
+	}
+
+	return B;
+}
+
+Matrix<int> ceil(const Matrix<float>& A)
+{
+    Matrix<int> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
+	{
+        B._data[i] = (int)ceil(A._data[i]);
+	}
+
+	return B;
+}
+
+Matrix<int> round(const Matrix<float>& A)
+{
+    Matrix<int> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
+	{
+        B._data[i] = (int)round(A._data[i]);
+	}
+
+	return B;
+}
+
+Matrix<float> pow(const Matrix<float>& A, double n)
+{
+	Matrix<float> B(A.n_rows, A.n_cols);
+    for(int i = 0; i < B._size; i++)
+	{
+        B._data[i] = (float)pow(A._data[i], n);
+	}
+
+	return B;
+}
+
+Matrix<int> range(int start, int end, int step)
+{
+	if(step == INT_MAX)
+	{
+		step = 1;
+	}
+	if(end == INT_MAX)
+	{
+		end = start;
+		start = 0;
+	}
+	Matrix<int> x(1, (end-start)/step);
+	int i = 0;
+	for(int value = start; value < end; value += step, i++)
+	{
+		x[i] = value;
+	}
+	return x;
+}
+
+
+Matrix<float> linspace(float start, float end, int n)
+{
+	Matrix<float> x(1, n);
+	x._data[0] = start;
+	x._data[n-1] = end;
+
+	float delta = (end-start)/(n-1);
+	for(int i = 1; i < n-1; i++)
+	{
+		x._data[i] = x._data[i-1] + delta;
+	}
+
+	return x;
+}
+
+float deg2rad(float alpha)
+{
+	return alpha / 180 * PI;
+}
+
+Matrix<float> inv(Matrix<float> A)
+{
+	if(A.rows() != A.cols())
+	{
+		cout << "Error using inv(A)!" << endl
+			 << "A must be a square matrix!" << endl;
 		exit(-1);
 	}
-	if(n == 0)
+
+	Matrix<float> B = eye(A);
+	int n = A.rows();
+	for(int i = 0; i < n; i++)
 	{
-		cout << "Error in \"Matrix<DataType> interp1(const Matrix<float>& x, const Matrix<DataType>& v, const Matrix<float>& xi):\"" << endl
-			 << "x and v cannot be empty!" << endl;
-		exit(-1);
-	}
-	if(n == 1)
-	{
-		return Matrix<DataType>(xi.rows(), xi.cols(), v(0));
-	}
-	for(int i = 0; i < n-1; i++)
-	{
-		if(x(i) >= x(i+1))
+		float main_value = A(i, i);
+		int main_row = i;
+		for(int subi = i+1; subi < n; subi++)
 		{
-			cout << "Error in \"Matrix<DataType> interp1(const Matrix<float>& x, const Matrix<DataType>& v, const Matrix<float>& xi):\"" << endl
-				 << "x must be strictly increasing!" << endl;
+			if(fabs(A(subi, i)) > fabs(main_value))
+			{
+				main_value = A(subi, i);
+				main_row = subi;
+			}
+		}
+		if(Matrix<float>::isZero(main_value))
+		{
+			cout << "Error in inv(A)!" << endl
+				 << "Matrix A is cannot be inversed!" << endl;
 			exit(-1);
 		}
-	}
 
-	Matrix<DataType> vi(xi.rows(), xi.cols());
-	int ni = xi.size();
-	for(int i = 0; i < ni; i++)
-	{
-		if(xi(i) < x(0))
+		A.swap_row(i, main_row);
+		B.swap_row(i, main_row);
+
+		A.divide_row(i, main_value);
+		B.divide_row(i, main_value);
+
+		A(i, i) = 1.0f; // float correction
+
+		for(int subi = 0; subi < n; subi++)
 		{
-			vi(i) = (xi(i) - x(0))*(v(1)-v(0))/(x(1)-x(0));
-			continue;
-		}
-		if(xi(i) > x(n-1))
-		{
-			vi(i) = (xi(i) - x(n-2))*(v(n-1)-v(n-2))/(x(n-1)-x(n-2));
-			continue;
-		}
-		for(int subi = 0; subi < n-1; subi++)
-		{
-			if(x(subi) <= xi(i) && x(subi+1) >= xi(i))
+			if(subi != i)
 			{
-				vi(i) = (xi(i) - x(subi))*(v(subi+1)-v(subi))/(x(subi+1)-x(subi));
-				break;
+				B.add_row(i, -A(subi, i), subi);
+				A.add_row(i, -A(subi, i), subi);
+				A(subi, i) = 0.0f; // float correction
 			}
 		}
 	}
+
+	return B;
 }
-
-// 没有写超出边界的情况
-// 没有使用二分查找
-// 没有写 x y v 元素过少的情况
-template<class DataType>
-Matrix<DataType> interp2(const Matrix<float>& x, const Matrix<float>& y, const Matrix<DataType>& v,
-						  const Matrix<float>& xi, const Matrix<float>& yi)
-{
-	int n_rows = x.rows();
-	int n_cols = x.cols();
-	if(y.rows() != n_rows || y.cols() != n_cols || v.rows() != n_rows || v.cols() != n_cols)
-	{
-		cout << "Error in \"Matrix<DataType> interp2(const Matrix<float>& x,\n"
-				"                                    const Matrix<float>& y,\n"
-				"                                    const Matrix<DataType>& v,\n"
-				"                                    const Matrix<float>& xi,\n"
-				"                                    const Matrix<float>& yi)\":" << endl
-			<< "x, y and v must have the same size!" << endl;
-		exit(-1);
-	}
-	if(n_rows == 0 || n_cols == 0)
-	{
-		cout << "Error in \"Matrix<DataType> interp2(const Matrix<float>& x,\n"
-				"                                    const Matrix<float>& y,\n"
-				"                                    const Matrix<DataType>& v,\n"
-				"                                    const Matrix<float>& xi,\n"
-				"                                    const Matrix<float>& yi)\":" << endl
-			<< "x, y and v cannot be empty!" << endl;
-		exit(-1);
-	}
-
-	for(int j = 0; j < n_cols-1; j++)
-	{
-		if(x(0, j) >= x(0, j+1))
-		{
-			cout << "Error in \"Matrix<DataType> interp2(const Matrix<float>& x,\n"
-					"                                    const Matrix<float>& y,\n"
-					"                                    const Matrix<DataType>& v,\n"
-					"                                    const Matrix<float>& xi,\n"
-					"                                    const Matrix<float>& yi)\":" << endl
-				 << "x and y must be normal grid!" << endl;
-			exit(-1);
-		}
-		for(int i = 0; i < n_rows; i++)
-		{
-			if(x(i, j) != x(0, j))
-			{
-				cout << "Error in \"Matrix<DataType> interp2(const Matrix<float>& x,\n"
-						"                                    const Matrix<float>& y,\n"
-						"                                    const Matrix<DataType>& v,\n"
-						"                                    const Matrix<float>& xi,\n"
-						"                                    const Matrix<float>& yi)\":" << endl
-					 << "x and y must be normal grid!" << endl;
-				exit(-1);
-			}
-		}
-	}
-	
-	for(int i = 0; i < n_rows-1; i++)
-	{
-		if(y(i, 0) >= y(i+1, 0))
-		{
-			cout << "Error in \"Matrix<DataType> interp2(const Matrix<float>& x,\n"
-					"                                    const Matrix<float>& y,\n"
-					"                                    const Matrix<DataType>& v,\n"
-					"                                    const Matrix<float>& xi,\n"
-					"                                    const Matrix<float>& yi)\":" << endl
-				 << "x and y must be normal grid!" << endl;
-			exit(-1);
-		}
-		for(int j = 0; j < n_cols; j++)
-		{
-			if(y(i, j) != y(i, 0))
-			{
-				cout << "Error in \"Matrix<DataType> interp2(const Matrix<float>& x,\n"
-						"                                    const Matrix<float>& y,\n"
-						"                                    const Matrix<DataType>& v,\n"
-						"                                    const Matrix<float>& xi,\n"
-						"                                    const Matrix<float>& yi)\":" << endl
-					 << "x and y must be normal grid!" << endl;
-				exit(-1);
-			}
-		}
-	}
-
-	int ni_rows = xi.rows();
-	int ni_cols = xi.cols();
-	if(yi.rows() != ni_rows || yi.cols() != ni_cols)
-	{
-		cout << "Error in \"Matrix<DataType> interp2(const Matrix<float>& x,\n"
-				"                                    const Matrix<float>& y,\n"
-				"                                    const Matrix<DataType>& v,\n"
-				"                                    const Matrix<float>& xi,\n"
-				"                                    const Matrix<float>& yi)\":" << endl
-			 << "xi and yi must have the same size!" << endl;
-		exit(-1);
-	}
-
-	int ni = xi.size();
-	int row = 0, col = 0;
-	Matrix<DataType> vi(ni_rows, ni_cols);
-
-	for(int i = 0; i < ni; i++)
-	{
-		for(int it_col = 0; it_col < n_cols-1; it_col++)
-		{
-			if(xi(i) >= x(0, it_col) && xi(i) <= x(0, it_col+1))
-			{
-				col = it_col;
-				break;
-			}
-		}
-
-		for(int it_row = 0; it_row < n_rows-1; it_row++)
-		{
-			if(yi(i) >= y(it_row, 0) && yi(i) <= y(it_row+1, 0))
-			{
-				row = it_row;
-				break;
-			}
-		}
-
-		float x_rear = xi(i) - x(0, col);
-		float y_rear = yi(i) - y(row, 0);
-		DataType v_temp1 = v(row, col) + x_rear * (v(row, col+1) - v(row, col));
-		DataType v_temp2 = v(row+1, col) + x_rear * (v(row+1, col+1) - v(row+1, col));
-		vi(i) = v_temp1 + y_rear * (v_temp2 - v_temp1);
-	}
-
-	return vi;
-}
-
-#endif
