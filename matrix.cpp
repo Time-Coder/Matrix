@@ -45,10 +45,15 @@ Matrix<float> eye(int n)
 	return In;
 }
 
+bool __is_rand_seed_plant = false;
 Matrix<float> rand(int rows, int cols)
 {
 	Matrix<float> A(rows, cols);
-	srand((unsigned)time(NULL));
+	if(!__is_rand_seed_plant)
+	{
+		srand((unsigned)time(NULL));
+		__is_rand_seed_plant = true;
+	}
 	for(int i = 0; i < A.size(); i++)
 	{
 		A(i) = rand() / float(RAND_MAX);
